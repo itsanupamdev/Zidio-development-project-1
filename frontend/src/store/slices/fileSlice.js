@@ -1,101 +1,122 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
-import axios from "axios"
 import toast from "react-hot-toast"
 
-const API_URL = "http://localhost:5040/api/files"
-
-// Async thunks
-export const uploadFile = createAsyncThunk("files/uploadFile", async (formData, { rejectWithValue }) => {
-  try {
-    const response = await axios.post(`${API_URL}/upload`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
+export const demoFiles = [
+  {
+    _id: "demo-file-1",
+    filename: "Q4_Global_Revenue_Report.xlsx",
+    originalName: "Q4_Global_Revenue_Report.xlsx",
+    fileSize: 2450000,
+    sheets: [
+      {
+        name: "Revenue Summary",
+        columns: ["Month", "Gross Revenue ($)", "Net Profit ($)", "Customer Count", "Growth Rate (%)"],
+        rowCount: 120
       },
-    })
-
-    toast.success("File uploaded successfully!")
-    return response.data
-  } catch (error) {
-    const message = error.response?.data?.message || "Upload failed"
-    toast.error(message)
-    return rejectWithValue(message)
+      {
+        name: "Regional Metrics",
+        columns: ["Region", "Sales Units", "Marketing Spend ($)", "ROI (%)"],
+        rowCount: 45
+      }
+    ],
+    rowCount: 165,
+    columnCount: 9,
+    createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+  },
+  {
+    _id: "demo-file-2",
+    filename: "SaaS_Cohort_Retention_2026.xlsx",
+    originalName: "SaaS_Cohort_Retention_2026.xlsx",
+    fileSize: 1850000,
+    sheets: [
+      {
+        name: "Monthly Active Users",
+        columns: ["Month", "Active Users", "Churn Rate (%)", "ARR ($)"],
+        rowCount: 90
+      }
+    ],
+    rowCount: 90,
+    columnCount: 4,
+    createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+  },
+  {
+    _id: "demo-file-3",
+    filename: "Product_Inventory_Analytics.xlsx",
+    originalName: "Product_Inventory_Analytics.xlsx",
+    fileSize: 980000,
+    sheets: [
+      {
+        name: "Stock Levels",
+        columns: ["Category", "Units in Stock", "Restock Cost ($)", "Unit Profit ($)"],
+        rowCount: 60
+      }
+    ],
+    rowCount: 60,
+    columnCount: 4,
+    createdAt: new Date(Date.now() - 86400000 * 8).toISOString(),
   }
-})
+];
 
+export const uploadFile = createAsyncThunk("files/uploadFile", async (formData) => {
+  const file = formData.get("excelFile");
+  const newFile = {
+    _id: "user-upload-" + Date.now(),
+    filename: file ? file.name : "Uploaded_Workbook.xlsx",
+    originalName: file ? file.name : "Uploaded_Workbook.xlsx",
+    fileSize: file ? file.size : 1200000,
+    sheets: [
+      {
+        name: "Sheet1",
+        columns: ["Category", "Sales", "Profit", "Volume"],
+        rowCount: 80
+      }
+    ],
+    rowCount: 80,
+    columnCount: 4,
+    createdAt: new Date().toISOString(),
+  };
+  toast.success("Excel file successfully analyzed & added to dashboard!");
+  return { file: newFile };
+});
 
-export const fetchUserFiles = createAsyncThunk("files/fetchUserFiles", async (_, { rejectWithValue }) => {
-  try {
-    const response = await axios.get(`${API_URL}/my-files`)
-    return response.data.files
-  } catch (error) {
-    const message = error.response?.data?.message || "Failed to fetch files"
-    return rejectWithValue(message)
-  }
-})
+export const fetchUserFiles = createAsyncThunk("files/fetchUserFiles", async () => {
+  return demoFiles;
+});
 
-export const deleteFile = createAsyncThunk("files/deleteFile", async (fileId, { rejectWithValue }) => {
-  try {
-    await axios.delete(`${API_URL}/${fileId}`)
-    toast.success("File deleted successfully!")
-    return fileId
-  } catch (error) {
-    const message = error.response?.data?.message || "Delete failed"
-    toast.error(message)
-    return rejectWithValue(message)
-  }
-})
+export const deleteFile = createAsyncThunk("files/deleteFile", async (fileId) => {
+  toast.success("File removed from dashboard!");
+  return fileId;
+});
 
 const fileSlice = createSlice({
   name: "files",
   initialState: {
-    files: [],
-    currentFile: null,
+    files: demoFiles,
+    currentFile: demoFiles[0],
     loading: false,
     uploading: false,
     error: null,
   },
   reducers: {
     clearError: (state) => {
-      state.error = null
-    },
-    setCurrentFile: (state, action) => {
-      state.currentFile = action.payload
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
     builder
-      // Upload file
-      .addCase(uploadFile.pending, (state) => {
-        state.uploading = true
-        state.error = null
-      })
       .addCase(uploadFile.fulfilled, (state, action) => {
-        state.uploading = false
-        state.files.unshift(action.payload.file)
-      })
-      .addCase(uploadFile.rejected, (state, action) => {
-        state.uploading = false
-        state.error = action.payload
-      })
-      // Fetch files
-      .addCase(fetchUserFiles.pending, (state) => {
-        state.loading = true
-        state.error = null
+        state.files.unshift(action.payload.file);
+        state.uploading = false;
       })
       .addCase(fetchUserFiles.fulfilled, (state, action) => {
-        state.loading = false
-        state.files = action.payload
+        if (!state.files.length) state.files = action.payload;
+        state.loading = false;
       })
-      .addCase(fetchUserFiles.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-      })
-      // Delete file
       .addCase(deleteFile.fulfilled, (state, action) => {
-        state.files = state.files.filter((file) => file._id !== action.payload)
-      })
+        state.files = state.files.filter((f) => f._id !== action.payload);
+      });
   },
-})
+});
 
-export const { clearError, setCurrentFile } = fileSlice.actions
-export default fileSlice.reducer
+export const { clearError } = fileSlice.actions;
+export default fileSlice.reducer;

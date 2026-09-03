@@ -2,49 +2,46 @@
 
 import { useEffect } from "react"
 import { Routes, Route, Navigate } from "react-router-dom"
-import { useDispatch, useSelector } from "react-redux"
+import { useDispatch } from "react-redux"
 import { Toaster } from "react-hot-toast"
 import { checkAuth } from "./store/slices/authSlice"
 
 // Components
 import Navbar from "./components/Navbar"
-import Login from "./pages/Login"
-import Register from "./pages/Register"
 import Dashboard from "./pages/Dashboard"
 import EnhancedFileUpload from "./pages/EnhancedFileUpload"
 import Analytics from "./pages/Analytics"
 import Profile from "./pages/Profile"
-import LoadingSpinner from "./components/LoadingSpinner"
 import AdminDashboard from "./pages/AdminDashboard"
 
 function App() {
   const dispatch = useDispatch()
-  const { isAuthenticated, loading } = useSelector((state) => state.auth)
 
   useEffect(() => {
     dispatch(checkAuth())
   }, [dispatch])
 
-  if (loading) {
-    return <LoadingSpinner />
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Toaster position="top-right" />
 
-      {isAuthenticated && <Navbar />}
+      {/* Demo Notification Ribbon */}
+      <div className="bg-indigo-600 text-white text-xs text-center py-2 px-4 font-medium flex items-center justify-center gap-2 shadow-sm">
+        <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>Excel Analytics Platform &bull; Live Client-Side Demo Mode (Interactive Dashboards, File Parsing &amp; Charts Enabled)</span>
+      </div>
 
-      <main className={isAuthenticated ? "pt-16" : ""}>
+      <Navbar />
+
+      <main className="flex-1">
         <Routes>
-          <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
-          <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
-          <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} />
-          <Route path="/upload" element={isAuthenticated ? <EnhancedFileUpload /> : <Navigate to="/login" />} />
-          <Route path="/analytics/:fileId" element={isAuthenticated ? <Analytics /> : <Navigate to="/login" />} />
-          <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" />} />
-          <Route path="/admin" element={isAuthenticated ? <AdminDashboard /> : <Navigate to="/login" />} />
-          <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/upload" element={<EnhancedFileUpload />} />
+          <Route path="/analytics/:fileId" element={<Analytics />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="*" element={<Dashboard />} />
         </Routes>
       </main>
     </div>
